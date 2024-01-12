@@ -1,0 +1,25 @@
+-- Question 3
+-- Structure the data from the PL_table so that the end table can be visualised in Tableau to show the per unit values for all the accounts and allow drill-down to different levels.
+
+-- Answer --
+
+WITH VolumeTable AS (   SELECT     Period,     Scenario,     Category,     Sub_Category,     Region,     Market,     Channel,     Customer,
+    Account,
+    COALESCE(SUM(Account_Values), 0) AS Volume   FROM     PL_table   WHERE     Account = 'volume'
+    
+  GROUP BY
+    Period,     Scenario,     Category,     Sub_Category,     Region,     Market,     Channel,     Customer,
+    Account )
+
+, NonVolumeTable AS (   SELECT     Period,     Scenario,     Category,     Sub_Category,     Region,     Market,     Channel,     Customer,
+    Account,
+    COALESCE(SUM(Account_Values), 0) AS Account_Values   FROM     PL_table   WHERE     Account <> 'volume'
+    
+  GROUP BY
+    Period,     Scenario,     Category,     Sub_Category,     Region,     Market,     Channel,     Customer,
+    Account )
+
+SELECT   NV.Period,   NV.Scenario,   NV.Category,   NV.Sub_Category,   NV.Region,   NV.Market,   NV.Channel,   NV.Customer,   NV.Account,   NV.Account_Values,   VT.Volume
+ FROM   NonVolumeTable AS NV 
+FULL JOIN   VolumeTable AS VT 
+ON   NV.Period = VT.Period   AND NV.Scenario = VT.Scenario   AND NV.Category = VT.Category   AND NV.Sub_Category = VT.Sub_Category   AND NV.Region = VT.Region   AND NV.Market = VT.Market   AND NV.Channel = VT.Channel   AND NV.Customer = VT.Customer   AND NV.Account = VT.Account;

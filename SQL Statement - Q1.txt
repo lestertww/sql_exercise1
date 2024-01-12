@@ -1,0 +1,44 @@
+-- Question 1
+-- Extract both Sales_Value and Forecasted Sales_Value for each Period, Category, Sub_Category, Region, Market, Channel, Customer for the year 2023.
+
+-- Answer --
+
+SELECT
+  PL.Period,
+  PL.Category,
+  PL.Sub_Category,
+  PL.Region,
+  PL.Market,
+  PL.Channel,
+  PL.Customer,
+  SUM(S.Sales_Value) AS Sales_Value,
+  SUM(PL.Account_Values) AS Forecasted_Sales_Value
+
+FROM 
+  PL_table AS PL
+
+LEFT JOIN
+  Sales_table AS S 
+
+ON 
+  PL.Period = DATE_TRUNC(‘Month’, S.Calendar_day)
+  AND PL.Category = S.Category
+  AND PL.Sub_Category = S.Sub_Category
+  AND PL.Region = S.Region
+  AND PL.Market = S.Market
+  AND PL.Channel = S.Channel
+  AND PL.Customer = S.Customer
+
+WHERE
+  PL.Scenario = ‘Forecast’
+  AND PL.Account = ‘sales’
+  AND YEAR(PL.Period) = 2023
+
+GROUP BY
+  PL.Period,
+  PL.Category,
+  PL.Sub_Category,
+  PL.Region,
+  PL.Market,
+  PL.Channel,
+  PL.Customer;

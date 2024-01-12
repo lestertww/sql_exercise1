@@ -1,0 +1,30 @@
+-- Question 2
+-- Extract weekly Sales_Values, Rolling Past 8-weeks Sales_Values, Rolling Past 8-12 weeks Sales_Values from the Sales_table? Consider cases where a sale might not be present in a certain week.
+
+-- Answer --
+
+WITH RECURSIVE AllWeeks AS (
+  SELECT
+    1 AS Calendar_week
+  UNION 
+  SELECT
+    Calendar_week + 1
+
+  FROM
+    AllWeeks
+
+  WHERE
+    Calendar_week < 52
+)
+
+, WeeklySales AS (   SELECT     EXTRACT(YEAR FROM Calendar_day) AS Calendar_year,     EXTRACT(WEEK FROM Calendar_day) AS Calendar_week,     Category,     Sub_category,     Material,     Region,     Market,     Channel,     Customer,     SUM(Sales_Value) AS Sales_Value
+   FROM     Sales_table
+   GROUP BY     EXTRACT(YEAR FROM Calendar_day),     EXTRACT(WEEK FROM Calendar_day),     Category,     Sub_category,     Material,     Region,     Market,     Channel,     Customer )  SELECT   WS.Calendar_year,   AW.Calendar_week,   WS.Category,   WS.Sub_category,   WS.Material,   WS.Region,   WS.Market,   WS.Channel,   WS.Customer,   WS.Sales_Value,   CASE     WHEN COUNT(*) OVER (PARTITION BY WS.Calendar_year ORDER BY AW.Calendar_week ROWS BETWEEN 7 PRECEDING AND CURRENT ROW) = 8     THEN SUM(WS.Sales_Value) OVER (PARTITION BY WS.Calendar_year ORDER BY AW.Calendar_week ROWS BETWEEN 7 PRECEDING AND     CURRENT ROW)     ELSE NULL   END AS Rolling_Past_8_weeks_Sales_Values,   CASE     WHEN COUNT(*) OVER (PARTITION BY WS.Calendar_year ORDER BY AW.Calendar_week ROWS BETWEEN 13 PRECEDING AND 7 PRECEDING) = 5     THEN SUM(WS.Sales_Value) OVER (PARTITION BY WS.Calendar_year ORDER BY AW.Calendar_week ROWS BETWEEN 13 PRECEDING AND 7     PRECEDING)     ELSE NULL   END AS Rolling_Past_8_12_weeks_Sales_Values
+
+FROM   AllWeeks AS AW
+
+LEFT JOIN
+  WeeklySales AS WS
+
+ON
+  AW.Calendar_week = WS.Calendar_week;
